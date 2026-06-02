@@ -12,6 +12,7 @@ it on identical splits.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import NamedTuple
 
 import jax
@@ -43,7 +44,7 @@ def _make_loss(
     G0: float,
     D_prior_mean: float = 50.0,
     D_prior_std: float = 30.0,
-):
+) -> Callable[[jax.Array], jax.Array]:
     """Build a JIT-compiled loss function loss(theta) where theta = [log_D, t_meal]."""
 
     def loss_fn(theta: jax.Array) -> jax.Array:

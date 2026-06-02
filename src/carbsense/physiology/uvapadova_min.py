@@ -192,7 +192,7 @@ def simulate(
         ]
     )
 
-    term = ODETerm(vector_field)
+    term = ODETerm(vector_field)  # type: ignore[arg-type]
     solver = Tsit5()
     saveat = SaveAt(ts=t_eval)
     # dtmax=1.0 ensures the solver doesn't step over our 1-min wide pulses,
@@ -212,7 +212,7 @@ def simulate(
         max_steps=20_000,
     )
 
-    return sol.ys[:, 2]  # G column
+    return jnp.asarray(sol.ys[:, 2])  # G column
 
 
 def cgm_observation(
