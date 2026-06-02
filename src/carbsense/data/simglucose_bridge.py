@@ -125,8 +125,9 @@ def generate_meal_episode(
 
     # results is a pandas DataFrame indexed by datetime, with column "CGM".
     times_dt = results.index.to_pydatetime()
-    minutes = np.array([(t - start_time).total_seconds() / 60.0 for t in times_dt],
-                       dtype=np.float32)
+    minutes = np.array(
+        [(t - start_time).total_seconds() / 60.0 for t in times_dt], dtype=np.float32
+    )
     cgm = results["CGM"].to_numpy(dtype=np.float32)
 
     # Resample to uniform 5-min grid via nearest-neighbor (SimGlucose
@@ -145,7 +146,7 @@ def generate_meal_episode(
     )
 
 
-def basal_only_infusions() -> "InsulinInput":
+def basal_only_infusions() -> InsulinInput:
     """Return an empty ``InsulinInput`` (no extra bolus / temp basal).
     ...
     """
