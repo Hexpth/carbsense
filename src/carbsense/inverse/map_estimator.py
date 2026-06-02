@@ -61,7 +61,7 @@ def _make_loss(
         y_hat = cgm_observation(G_p, params, key=None)
 
         # Data fit: per-sample MSE weighted by inverse CGM noise variance
-        data_term = jnp.mean((y_hat - y_obs) ** 2) / (params.sigma_cgm ** 2)
+        data_term = jnp.mean((y_hat - y_obs) ** 2) / (params.sigma_cgm**2)
 
         # Log-normal prior on D
         log_prior_mean = jnp.log(jnp.asarray(D_prior_mean))
@@ -89,8 +89,7 @@ def estimate_meal(
     loss_fn = _make_loss(params, infusions, t_eval, y_obs, G0)
     grad_fn = jax.jit(jax.grad(loss_fn))
 
-    theta = jnp.array([jnp.log(jnp.asarray(D_init)), jnp.asarray(t_meal_init)],
-                      dtype=jnp.float32)
+    theta = jnp.array([jnp.log(jnp.asarray(D_init)), jnp.asarray(t_meal_init)], dtype=jnp.float32)
 
     optimizer = optax.adam(lr)
     opt_state = optimizer.init(theta)
@@ -98,13 +97,14 @@ def estimate_meal(
     prev_loss = jnp.inf
     converged = False
     final_loss = jnp.inf
-    i = 0
+    n_done = 0
 
-    for i in range(n_iter):
+    for step in range(n_iter):
         g = grad_fn(theta)
         updates, opt_state = optimizer.update(g, opt_state)
         theta = optax.apply_updates(theta, updates)
         final_loss = loss_fn(theta)
+        n_done = step + 1
 
         if jnp.abs(prev_loss - final_loss) < tol:
             converged = True
@@ -115,6 +115,6 @@ def estimate_meal(
         D_est=float(jnp.exp(theta[0])),
         t_meal_est=float(theta[1]),
         final_loss=float(final_loss),
-        n_iter=i + 1,
+        n_iter=n_done,
         converged=converged,
     )

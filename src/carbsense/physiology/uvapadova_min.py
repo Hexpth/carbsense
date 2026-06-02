@@ -26,45 +26,46 @@ import jax
 import jax.numpy as jnp
 from diffrax import ODETerm, PIDController, SaveAt, Tsit5, diffeqsolve
 
-
 # --------------------------------------------------------------------------- #
 # Parameter containers
 # --------------------------------------------------------------------------- #
+
 
 class PatientParams(NamedTuple):
     """Per-patient physiological parameters (T1D adult, ~70 kg)."""
 
     # Body
-    BW: jax.Array = jnp.asarray(70.0)            # kg
+    BW: jax.Array = jnp.asarray(70.0)  # kg
 
     # Glucose subsystem (Bergman minimal)
-    Gb: jax.Array = jnp.asarray(120.0)           # mg/dL, basal/target glucose
-    p1: jax.Array = jnp.asarray(0.025)           # 1/min, glucose effectiveness
-    SI: jax.Array = jnp.asarray(0.0005)          # 1/min per pmol/L, insulin sensitivity
+    Gb: jax.Array = jnp.asarray(120.0)  # mg/dL, basal/target glucose
+    p1: jax.Array = jnp.asarray(0.025)  # 1/min, glucose effectiveness
+    SI: jax.Array = jnp.asarray(0.0005)  # 1/min per pmol/L, insulin sensitivity
 
     # Remote insulin action
-    p2: jax.Array = jnp.asarray(0.025)           # 1/min
-    p3: jax.Array = jnp.asarray(1.3e-5)          # min^-2 per pmol/L
+    p2: jax.Array = jnp.asarray(0.025)  # 1/min
+    p3: jax.Array = jnp.asarray(1.3e-5)  # min^-2 per pmol/L
 
     # Insulin pharmacokinetics
-    Ib: jax.Array = jnp.asarray(60.0)            # pmol/L, basal plasma insulin
-    V_i: jax.Array = jnp.asarray(3.5)            # L, insulin distribution volume
-    k_a: jax.Array = jnp.asarray(0.018)          # 1/min, sc -> plasma rate
+    Ib: jax.Array = jnp.asarray(60.0)  # pmol/L, basal plasma insulin
+    V_i: jax.Array = jnp.asarray(3.5)  # L, insulin distribution volume
+    k_a: jax.Array = jnp.asarray(0.018)  # 1/min, sc -> plasma rate
 
     # Meal absorption (2-compartment cascade)
-    k_meal: jax.Array = jnp.asarray(0.05)        # 1/min, transit rate
-    f_carb: jax.Array = jnp.asarray(0.9)         # bioavailability
-    V_g: jax.Array = jnp.asarray(1.88)           # dL/kg, glucose distribution volume
+    k_meal: jax.Array = jnp.asarray(0.05)  # 1/min, transit rate
+    f_carb: jax.Array = jnp.asarray(0.9)  # bioavailability
+    V_g: jax.Array = jnp.asarray(1.88)  # dL/kg, glucose distribution volume
 
     # CGM measurement model
-    tau_cgm: jax.Array = jnp.asarray(7.0)        # min, sensor lag
-    sigma_cgm: jax.Array = jnp.asarray(2.0)      # mg/dL, measurement noise std
+    tau_cgm: jax.Array = jnp.asarray(7.0)  # min, sensor lag
+    sigma_cgm: jax.Array = jnp.asarray(2.0)  # mg/dL, measurement noise std
 
 
 class MealInput(NamedTuple):
     """Meal events. Both fields may be scalars or 1-D arrays."""
-    t_meal: jax.Array     # min, meal onset
-    D: jax.Array          # grams of carbs
+
+    t_meal: jax.Array  # min, meal onset
+    D: jax.Array  # grams of carbs
 
 
 class InsulinInput(NamedTuple):
@@ -72,14 +73,16 @@ class InsulinInput(NamedTuple):
 
     Fields may be scalars or 1-D arrays. duration=0 means instantaneous bolus.
     """
-    t: jax.Array          # min
-    u: jax.Array          # pmol/min equivalent rate
-    duration: jax.Array   # min, 0 for boluses
+
+    t: jax.Array  # min
+    u: jax.Array  # pmol/min equivalent rate
+    duration: jax.Array  # min, 0 for boluses
 
 
 # --------------------------------------------------------------------------- #
 # Forcing functions (smooth approximations of impulses)
 # --------------------------------------------------------------------------- #
+
 
 def _smooth_pulse(t: jax.Array, t0: jax.Array, width: float = 1.0) -> jax.Array:
     """Gaussian bump of unit area centered at t0. Smooth -> autodiff-friendly."""
@@ -102,8 +105,7 @@ def insulin_input_rate(t: jax.Array, infusions: InsulinInput) -> jax.Array:
     bolus_mask = dur < 0.5
     bolus_rate = u * _smooth_pulse(t, t_inf, width=1.0)
     # Smooth rectangular pulse for square-wave / temp-basal
-    basal_rate = u * jax.nn.sigmoid(2.0 * (t - t_inf)) * \
-                 jax.nn.sigmoid(2.0 * (t_inf + dur - t))
+    basal_rate = u * jax.nn.sigmoid(2.0 * (t - t_inf)) * jax.nn.sigmoid(2.0 * (t_inf + dur - t))
     rate = jnp.where(bolus_mask, bolus_rate, basal_rate)
     return jnp.sum(rate)
 
@@ -111,6 +113,7 @@ def insulin_input_rate(t: jax.Array, infusions: InsulinInput) -> jax.Array:
 # --------------------------------------------------------------------------- #
 # ODE right-hand side
 # --------------------------------------------------------------------------- #
+
 
 def vector_field(
     t: jax.Array,
@@ -129,19 +132,19 @@ def vector_field(
     p, meals, infusions, u_basal = args
     Q1, Q2, G, X, I_sc = y
 
-    D_in = carb_input_rate(t, meals)              # g/min
-    U_in = insulin_input_rate(t, infusions)        # pmol/min (above basal)
+    D_in = carb_input_rate(t, meals)  # g/min
+    U_in = insulin_input_rate(t, infusions)  # pmol/min (above basal)
 
     # Gut absorption cascade
-    dQ1 = D_in - p.k_meal * Q1                     # g/min
-    dQ2 = p.k_meal * Q1 - p.k_meal * Q2            # g/min
+    dQ1 = D_in - p.k_meal * Q1  # g/min
+    dQ2 = p.k_meal * Q1 - p.k_meal * Q2  # g/min
 
     # Glucose appearance in plasma (mg/dL/min)
     # k_meal*Q2 [g/min] * 1000 [mg/g] / (V_g [dL/kg] * BW [kg])
     Ra = p.f_carb * p.k_meal * Q2 * 1000.0 / (p.V_g * p.BW)
 
     # Plasma insulin concentration
-    I_p = I_sc / p.V_i                             # pmol/L
+    I_p = I_sc / p.V_i  # pmol/L
 
     # Glucose dynamics (Bergman minimal)
     # Term -p1*(G-Gb) lumps basal EGP suppression at steady state.
@@ -159,6 +162,7 @@ def vector_field(
 # --------------------------------------------------------------------------- #
 # Forward simulator
 # --------------------------------------------------------------------------- #
+
 
 def simulate(
     params: PatientParams,
@@ -178,13 +182,15 @@ def simulate(
     I_sc_0 = params.Ib * params.V_i
     u_basal = params.k_a * I_sc_0
 
-    y0 = jnp.array([
-        0.0,                          # Q1
-        0.0,                          # Q2
-        jnp.asarray(G0, jnp.float32), # G
-        0.0,                          # X
-        I_sc_0,                       # I_sc
-    ])
+    y0 = jnp.array(
+        [
+            0.0,  # Q1
+            0.0,  # Q2
+            jnp.asarray(G0, jnp.float32),  # G
+            0.0,  # X
+            I_sc_0,  # I_sc
+        ]
+    )
 
     term = ODETerm(vector_field)
     solver = Tsit5()
@@ -206,7 +212,7 @@ def simulate(
         max_steps=20_000,
     )
 
-    return sol.ys[:, 2]   # G column
+    return sol.ys[:, 2]  # G column
 
 
 def cgm_observation(

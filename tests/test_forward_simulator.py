@@ -105,6 +105,7 @@ def test_gradient_wrt_meal_size_is_positive(
     Uses jnp.atleast_1d to keep the scalar-tracer graph connected (jnp.array
     of a list containing a tracer silently breaks autodiff).
     """
+
     def G_at_90(D_val: jax.Array) -> jax.Array:
         meal = MealInput(
             t_meal=jnp.array([30.0]),
@@ -132,5 +133,6 @@ def test_cgm_lag_smooths_signal(
 
     peak_plasma = int(jnp.argmax(G_p))
     peak_cgm = int(jnp.argmax(G_cgm))
-    assert peak_cgm >= peak_plasma, \
+    assert peak_cgm >= peak_plasma, (
         f"CGM peak (idx {peak_cgm}) should lag plasma peak (idx {peak_plasma})"
+    )
