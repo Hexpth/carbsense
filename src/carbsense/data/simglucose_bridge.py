@@ -114,7 +114,7 @@ def generate_meal_episode(
     controller = BasalOnlyController(0)
 
     end_time = start_time + timedelta(minutes=duration_minutes)
-    
+
     import tempfile
     with tempfile.TemporaryDirectory() as tmp:
         sim_obj = SimObj(
