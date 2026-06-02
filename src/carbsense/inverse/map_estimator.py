@@ -95,9 +95,9 @@ def estimate_meal(
     optimizer = optax.adam(lr)
     opt_state = optimizer.init(theta)
 
-    prev_loss = jnp.inf
+    prev_loss: jax.Array = jnp.asarray(jnp.inf)
     converged = False
-    final_loss = jnp.inf
+    final_loss: jax.Array = jnp.asarray(jnp.inf)
     n_done = 0
 
     for step in range(n_iter):
