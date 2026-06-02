@@ -52,6 +52,13 @@ python_version = "3.11"
 strict = true
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = ["carbsense.data.simglucose_bridge"]
+disable_error_code = ["no-untyped-call", "no-any-return"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra --strict-markers --cov=carbsense --cov-report=term-missing"
+markers = [
+    "slow: tests that take more than a few seconds (e.g. SimGlucose integration)",
+]
