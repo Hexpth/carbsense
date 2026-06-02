@@ -11,16 +11,12 @@ inverse pipeline against an independent forward model.
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import jax.numpy as jnp
 import numpy as np
-
-if TYPE_CHECKING:
-    from carbsense.physiology.uvapadova_min import InsulinInput
 
 
 @dataclass(frozen=True)
