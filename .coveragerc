@@ -1,0 +1,10 @@
+[run]
+source = src/carbsense
+omit =
+	src/carbsense/data/simglucose_bridge.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    if TYPE_CHECKING:
+    raise NotImplementedError

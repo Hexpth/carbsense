@@ -114,14 +114,18 @@ def generate_meal_episode(
     controller = BasalOnlyController(0)
 
     end_time = start_time + timedelta(minutes=duration_minutes)
-    sim_obj = SimObj(
-        env,
-        controller,
-        end_time - start_time,
-        animate=False,
-        path=None,
-    )
-    results = sim(sim_obj)
+    
+    import tempfile
+    with tempfile.TemporaryDirectory() as tmp:
+        sim_obj = SimObj(
+            env,
+            controller,
+            end_time - start_time,
+            animate=False,
+            path=tmp,
+        )
+        sim(sim_obj)
+    results = sim_obj.results()
 
     # results is a pandas DataFrame indexed by datetime, with column "CGM".
     times_dt = results.index.to_pydatetime()
