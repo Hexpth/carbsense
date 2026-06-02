@@ -53,7 +53,12 @@ strict = true
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
+module = ["simglucose.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
 module = ["carbsense.data.simglucose_bridge"]
+disallow_subclassing_any = false
 disable_error_code = ["no-untyped-call", "no-any-return"]
 
 [tool.pytest.ini_options]

@@ -11,6 +11,7 @@ inverse pipeline against an independent forward model.
 """
 
 from __future__ import annotations
+from typing import TYPE_CHECKING, Any
 
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
@@ -105,7 +106,13 @@ def generate_meal_episode(
 
     # Trivial controller — only basal insulin, no correction or meal bolus.
     class BasalOnlyController(Controller):
-        def policy(self, observation, reward, done, **info):
+        def policy(
+            self,
+            observation: Any,
+            reward: Any,
+            done: Any,
+            **info: Any,
+        ) -> Any:
             return Action(basal=0, bolus=0)
 
         def reset(self) -> None:
