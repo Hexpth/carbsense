@@ -1,4 +1,8 @@
 # CarbSense
+![CI](https://github.com/Hexpth/carbsense/actions/workflows/ci.yml/badge.svg)
+![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
+![License](https://img.shields.io/badge/license-GPLv3-blue.svg)
+
 
 **Открытый алгоритм оценки углеводов по кривой непрерывной мониторинга глюкозы (CGM).**
 
